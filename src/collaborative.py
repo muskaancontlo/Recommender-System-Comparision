@@ -6,8 +6,7 @@ from scipy.sparse import linalg
 
 def collaborative_filtering(sparse_matrix, sparse_matrix_original, sparse_matrix_test_original, k, baseline = False):
 
-    start = time.time()
-
+    
     if not baseline:
         print(f'Collaborative Filtering')
     else:
@@ -69,6 +68,6 @@ def collaborative_filtering(sparse_matrix, sparse_matrix_original, sparse_matrix
         for i, (r, c) in enumerate(zip(row_test_indices, col_test_indices)):
             collaborative_matrix[r, c] = baseline_matrix[r,c] + np.dot(similarity_user_neighbour[r], np.array([collaborative_matrix[j,c]-baseline_matrix[j,c] for j in neighbourhood[r]]))/(similarity_user_neighbour[r].sum())
 
-    print('total time taken ' + '{0:.2f}'.format(time.time() - start) + ' secs.')
+    
     collaborative_matrix[np.isnan(collaborative_matrix)] = 0.0
     return collaborative_matrix
