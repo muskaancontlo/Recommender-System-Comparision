@@ -1,4 +1,4 @@
-
+import time
 
 import numpy as np
 from scipy import sparse
@@ -6,7 +6,8 @@ from scipy.sparse import linalg
 
 def collaborative_filtering(sparse_matrix, sparse_matrix_original, sparse_matrix_test_original, k, baseline = False):
 
-    
+    start = time.time()
+
     if not baseline:
         print(f'Collaborative Filtering')
     else:
@@ -33,7 +34,9 @@ def collaborative_filtering(sparse_matrix, sparse_matrix_original, sparse_matrix
     # store similarities for each user-user tuple
     similarity = np.diag(np.array([-2 for x in range(sparse_matrix.shape[0])], dtype = np.float32))
     similarity[rowu_indices, colu_indices] = dot_products[rowu_indices,colu_indices]/row_norm_products[rowu_indices, colu_indices]
-    similarity[np.isnan(similarity)] = 0.0
+    mean_similarity = np.nanmean(similarity, axis=1)
+    inds = np.where(np.isnan(similarity))
+    similarity[inds] = np.take(mean_similarity, inds[0])
 
     # copy upper triangular values to lower triangle
     similarity.T[rowu_indices, colu_indices] = similarity[rowu_indices, colu_indices]
@@ -68,6 +71,9 @@ def collaborative_filtering(sparse_matrix, sparse_matrix_original, sparse_matrix
         for i, (r, c) in enumerate(zip(row_test_indices, col_test_indices)):
             collaborative_matrix[r, c] = baseline_matrix[r,c] + np.dot(similarity_user_neighbour[r], np.array([collaborative_matrix[j,c]-baseline_matrix[j,c] for j in neighbourhood[r]]))/(similarity_user_neighbour[r].sum())
 
-    
+    print('total time taken ' + '{0:.2f}'.format(time.time() - start) + ' secs.')
     collaborative_matrix[np.isnan(collaborative_matrix)] = 0.0
+    mean_collaborative = np.nanmean(collaborative_matrix, axis=1)
+    inds = np.where(np.isnan(collaborative_matrix))
+    collaborative_matrix[inds] = np.take(mean_collaborative, inds[0])
     return collaborative_matrix

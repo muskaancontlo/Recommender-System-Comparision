@@ -83,6 +83,7 @@ def rmse_spearman(matrix_predicted, matrix_actual, path):
     rmse, spear = math.sqrt(total) / no_instances, rho
     print(f'\nRMSE Error: {rmse}')
     print(f'Spearman Correlation: {spear * 100}%')
+    mae(matrix_predicted, matrix_actual, path)
 
 
 def precision_on_top_k(matrix_predicted, matrix_actual, k = 100):
@@ -111,6 +112,27 @@ def precision_on_top_k(matrix_predicted, matrix_actual, k = 100):
 
     print(f'Precision on top {k}: {((k - fp) / k) * 100}%\n')
 
+def mae(matrix_predicted, matrix_actual, path):
+    """
+    Calculates the Mean Absolute Error (MAE)
+
+    Parameters:
+    matrix_predicted: this matrix contains detected values
+    matrix_actual: this matrix contains original values
+    path: this is the path to the test file containing testing instances
+    """
+    total = 0.0
+    no_instances = 0
+
+    for line in open(path, 'r'):
+        values = line.split(',')
+        r, c = int(values[0]) - 1, int(values[1]) - 1
+        total += abs(matrix_actual[r, c] - matrix_predicted[r, c])
+        no_instances += 1
+
+    mae_value = total / no_instances
+    print(f'\nMAE: {mae_value}')
+
 np.set_printoptions(precision = 5)
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -130,24 +152,28 @@ def main():
     collab_matrix = collaborative_filtering(train_norm, train_orig, test_orig, collaborative_neighbours)
     rmse_spearman(collab_matrix, test_orig, test_txt_path)
     precision_on_top_k(collab_matrix, all_orig)
+    mae(collab_matrix, test_orig, test_txt_path)
 
     collab_matrix_baseline = collaborative_filtering(
     	train_norm, train_orig, test_orig, collaborative_neighbours, baseline=True
     )
     rmse_spearman(collab_matrix_baseline, all_orig, test_txt_path)
     precision_on_top_k(collab_matrix_baseline, all_orig)
+    mae(collab_matrix_baseline, all_orig, test_txt_path)
 
     # perform svd
     for energy in [1, 0.9]:
         svd_matrix = svd(train_norm, concepts, energy)
         rmse_spearman(svd_matrix, test_norm, test_txt_path)
         precision_on_top_k(svd_matrix, all_norm)
+        mae(svd_matrix, test_norm, test_txt_path)
 
     # perform cur
     for energy in [1, 0.9]:
         cur_matrix = cur(train_norm, CUR_no_cols, concepts, energy)
         rmse_spearman(cur_matrix, test_norm, test_txt_path)
         precision_on_top_k(cur_matrix, all_norm)
+        mae(cur_matrix, test_norm, test_txt_path)
 
 
 if __name__ == '__main__':

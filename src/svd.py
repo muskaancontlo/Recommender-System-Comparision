@@ -2,40 +2,40 @@ import time
 
 import numpy as np
 from scipy.sparse import linalg
-from scipy.sparse.linalg import LinearOperator, eigsh
-
+from scipy.sparse.linalg import LinearOperator
 
 
 def svd_sparse(sparse_matrix, no_eigen_values):
 
-    def transpose(matrix):
-        return matrix.transpose()
+    def transpose(x):
+        return x.T
 
-    def matvec_XH_X(vector):
-        return XH_dot(X_dot(vector))
+    def matvec_XH_X(x):
+        return XH_dot(X_dot(x))
 
     n, m = sparse_matrix.shape
-    X_dot = sparse_matrix.dot
+    X_dot = X_matmat = sparse_matrix.dot
     XH_dot = transpose(sparse_matrix).dot
 
     XH_X = LinearOperator(
         matvec=matvec_XH_X,
         dtype=sparse_matrix.dtype,
-        shape=(min(n, m), min(n, m))
+        shape=(min(sparse_matrix.shape), min(sparse_matrix.shape))
     )
-
-    eigvals, eigvecs = eigsh(XH_X, k=no_eigen_values)
+    eigvals, eigvec = linalg.eigsh(XH_X, k = no_eigen_values)
     eigvals = np.maximum(eigvals.real, 0)
 
-    # Create sigma diagonal matrix
-    sigma = np.sqrt(eigvals)
+    # in our case all eigen values are going to be greater than zero
+    # create sigma diagnol matrix
+    slarge = np.sqrt(eigvals)
     s = np.zeros_like(eigvals)
-    s[:no_eigen_values] = sigma
+    s[:no_eigen_values] = slarge
 
-    u = X_dot(eigvecs) / sigma
-    vt = transpose(eigvecs)
+    ularge = X_matmat(eigvec)/slarge
+    vhlarge = transpose(eigvec)
 
-    return u, s, vt
+    return ularge, s, vhlarge
+
 
 def svd_retain_energy(sparse_matrix, no_eigen_values, energy = 1):
     u, s, vt = svd_sparse(sparse_matrix, no_eigen_values)
